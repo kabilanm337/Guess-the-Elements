@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Periodic Element Guesser</title>
+    <!-- Tailwind CSS for modern styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col items-center justify-center p-4">
+
+    <div class="max-w-xl w-full bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl p-6 md:p-8">
+        
+        <!-- Header -->
+        <div class="text-center mb-6">
+            <h1 class="text-3xl font-extrabold tracking-tight bg-gradient-to-r from-cyan-400 to-blue-500 bg-clip-text text-transparent">
+                Guess the Element
+            </h1>
+            <p class="text-slate-400 text-sm mt-1">Master the s, p, d, and f-blocks of the periodic table!</p>
+        </div>
+
+        <!-- Screen 1: Block Selection -->
+        <div id="block-screen" class="space-y-4">
+            <h2 class="text-lg font-semibold text-slate-300">1. Choose Periodic Block:</h2>
+            <div class="grid grid-cols-2 gap-3">
+                <button onclick="selectBlock('s')" class="p-4 bg-slate-800 hover:bg-cyan-600 hover:text-white transition rounded-xl font-medium border border-slate-700">s-Block</button>
+                <button onclick="selectBlock('p')" class="p-4 bg-slate-800 hover:bg-cyan-600 hover:text-white transition rounded-xl font-medium border border-slate-700">p-Block</button>
+                <button onclick="selectBlock('d')" class="p-4 bg-slate-800 hover:bg-cyan-600 hover:text-white transition rounded-xl font-medium border border-slate-700">d-Block</button>
+                <button onclick="selectBlock('f')" class="p-4 bg-slate-800 hover:bg-cyan-600 hover:text-white transition rounded-xl font-medium border border-slate-700">f-Block</button>
+            </div>
+        </div>
+
+        <!-- Screen 2: Mode Selection -->
+        <div id="mode-screen" class="hidden space-y-4">
+            <button onclick="backToBlocks()" class="text-xs text-cyan-400 hover:underline">&larr; Change Block</button>
+            <h2 class="text-lg font-semibold text-slate-300">2. Choose Guessing Mode:</h2>
+            <div class="space-y-3">
+                <button onclick="selectMode('number')" class="w-full p-4 bg-slate-800 hover:bg-blue-600 transition rounded-xl text-left font-medium border border-slate-700">
+                    Guess by <span class="text-cyan-400 font-bold">Atomic Number</span>
+                </button>
+                <button onclick="selectMode('symbol')" class="w-full p-4 bg-slate-800 hover:bg-blue-600 transition rounded-xl text-left font-medium border border-slate-700">
+                    Guess by <span class="text-cyan-400 font-bold">Atomic Symbol</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- Screen 3: Game Screen -->
+        <div id="game-screen" class="hidden space-y-6">
+            <div class="flex justify-between items-center text-sm text-slate-400 border-b border-slate-800 pb-3">
+                <span>Round: <strong id="round-num" class="text-white">1</strong> / 5</span>
+                <span>Score: <strong id="current-score" class="text-cyan-400">0</strong> pts</span>
+            </div>
+
+            <div class="text-center py-8 bg-slate-800/50 rounded-2xl border border-slate-800">
+                <p class="text-xs uppercase tracking-widest text-slate-400 mb-1" id="prompt-label">Atomic Number</p>
+                <div id="prompt-value" class="text-5xl font-black text-cyan-400">--</div>
+            </div>
+
+            <form onsubmit="submitGuess(event)" class="space-y-4">
+                <input type="text" id="user-guess" placeholder="Enter element name (e.g. Sodium)" autocomplete="off" required
+                    class="w-full px-4 py-3 bg-slate-800 border border-slate-700 rounded-xl focus:outline-none focus:border-cyan-500 text-white placeholder-slate-500">
+                <button type="submit" class="w-full py-3 bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold rounded-xl transition shadow-lg shadow-cyan-500/20">
+                    Submit Guess
+                </button>
+            </form>
+            <p id="feedback-msg" class="text-center text-sm h-6 font-medium"></p>
+        </div>
+
+        <!-- Screen 4: Results Screen -->
+        <div id="result-screen" class="hidden text-center space-y-6">
+            <h2 class="text-2xl font-bold text-white">Quiz Completed! 🎉</h2>
+            <div class="p-6 bg-slate-800/50 rounded-2xl border border-slate-800 space-y-2">
+                <p class="text-sm text-slate-400">Total Points</p>
+                <p id="final-score" class="text-4xl font-extrabold text-cyan-400">50 / 50</p>
+                <p id="percentage-msg" class="text-sm text-slate-300 pt-2">Guessing Percentage: 100%</p>
+            </div>
+            <button onclick="resetGame()" class="w-full py-3 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-xl transition">
+                Play Again
+            </button>
+        </div>
+
+    </div>
+
+    <!-- Script Logic -->
+    <script>
+        const elementsData = {
+            s: {
+                1: "Hydrogen", 3: "Lithium", 4: "Beryllium", 11: "Sodium", 12: "Magnesium",
+                19: "Potassium", 20: "Calcium", 37: "Rubidium", 38: "Strontium", 55: "Caesium",
+                56: "Barium", 87: "Francium", 88: "Radium"
+            },
+            p: {
+                2: "Helium", 5: "Boron", 6: "Carbon", 7: "Nitrogen", 8: "Oxygen", 9: "Fluorine", 10: "Neon",
+                13: "Aluminium", 14: "Silicon", 15: "Phosphorus", 16: "Sulphur", 17: "Chlorine", 18: "Argon",
+                31: "Gallium", 32: "Germanium", 33: "Arsenic", 34: "Selenium", 35: "Bromine", 36: "Krypton",
+                49: "Indium", 50: "Tin", 51: "Antimony", 52: "Tellurium", 53: "Iodine", 54: "Xenon",
+                81: "Thallium", 82: "Lead", 83: "Bismuth", 84: "Polonium", 85: "Astatine", 86: "Radon",
+                113: "Nihonium", 114: "Flerovium", 115: "Moscovium", 116: "Livermorium", 117: "Tennessine", 118: "Oganesson"
+            },
+            d: {
+                21: "Scandium", 22: "Titanium", 23: "Vanadium", 24: "Chromium", 25: "Manganese", 26: "Iron", 27: "Cobalt", 28: "Nickel", 29: "Copper", 30: "Zinc",
+                39: "Yttrium", 40: "Zirconium", 41: "Niobium", 42: "Molybdenum", 43: "Technetium", 44: "Ruthenium", 45: "Rhodium", 46: "Palladium", 47: "Silver", 48: "Cadmium",
+                57: "Lanthanum", 72: "Hafnium", 73: "Tantalum", 74: "Tungsten", 75: "Rhenium", 76: "Osmium", 77: "Iridium", 78: "Platinum", 79: "Gold", 80: "Mercury",
+                89: "Actinium", 104: "Rutherfordium", 105: "Dubnium", 106: "Seaborgium", 107: "Bohrium", 108: "Hassium", 109: "Meitnerium", 110: "Darmstadtium", 111: "Roentgenium", 112: "Copernicium"
+            },
+            f: {
+                58: "Cerium", 59: "Praseodymium", 60: "Neodymium", 61: "Promethium", 62: "Samarium", 63: "Europium", 64: "Gadolinium", 65: "Terbium", 66: "Dysprosium", 67: "Holmium", 68: "Erbium", 69: "Thulium", 70: "Ytterbium", 71: "Lutetium",
+                90: "Thorium", 91: "Protactinium", 92: "Uranium", 93: "Neptunium", 94: "Plutonium", 95: "Americium", 96: "Curium", 97: "Berkelium", 98: "Californium", 99: "Einsteinium", 100: "Fermium", 101: "Mendelevium", 102: "Nobelium", 103: "Lawrencium"
+            }
+        };
+
+        const symbolMapping = {
+            s: {'H':'Hydrogen', 'Li':'Lithium', 'Be':'Beryllium', 'Na':'Sodium', 'Mg':'Magnesium', 'K':'Potassium', 'Ca':'Calcium', 'Rb':'Rubidium', 'Sr':'Strontium', 'Cs':'Caesium', 'Ba':'Barium', 'Fr':'Francium', 'Ra':'Radium'},
+            p: {'He':'Helium', 'B':'Boron', 'C':'Carbon', 'N':'Nitrogen', 'O':'Oxygen', 'F':'Fluorine', 'Ne':'Neon', 'Al':'Aluminium', 'Si':'Silicon', 'P':'Phosphorus', 'S':'Sulphur', 'Cl':'Chlorine', 'Ar':'Argon', 'Ga':'Gallium', 'Ge':'Germanium', 'As':'Arsenic', 'Se':'Selenium', 'Br':'Bromine', 'Kr':'Krypton', 'In':'Indium', 'Sn':'Tin', 'Sb':'Antimony', 'Te':'Tellurium', 'I':'Iodine', 'Xe':'Xenon', 'Tl':'Thallium', 'Pb':'Lead', 'Bi':'Bismuth', 'Po':'Polonium', 'At':'Astatine', 'Rn':'Radon', 'Nh':'Nihonium', 'Fl':'Flerovium', 'Mc':'Moscovium', 'Lv':'Livermorium', 'Ts':'Tennessine', 'Og':'Oganesson'},
+            d: {'Sc':'Scandium', 'Ti':'Titanium', 'V':'Vanadium', 'Cr':'Chromium', 'Mn':'Manganese', 'Fe':'Iron', 'Co':'Cobalt', 'Ni':'Nickel', 'Cu':'Copper', 'Zn':'Zinc', 'Y':'Yttrium', 'Zr':'Zirconium', 'Nb':'Niobium', 'Mo':'Molybdenum', 'Tc':'Technetium', 'Ru':'Ruthenium', 'Rh':'Rhodium', 'Pd':'Palladium', 'Ag':'Silver', 'Cd':'Cadmium', 'La':'Lanthanum', 'Hf':'Hafnium', 'Ta':'Tantalum', 'W':'Tungsten', 'Re':'Rhenium', 'Os':'Osmium', 'Ir':'Iridium', 'Pt':'Platinum', 'Au':'Gold', 'Hg':'Mercury', 'Ac':'Actinium', 'Rf':'Rutherfordium', 'Db':'Dubnium', 'Sg':'Seaborgium', 'Bh':'Bohrium', 'Hs':'Hassium', 'Mt':'Meitnerium', 'Ds':'Darmstadtium', 'Rg':'Roentgenium', 'Cn':'Copernicium'},
+            f: {'Ce':'Cerium', 'Pr':'Praseodymium', 'Nd':'Neodymium', 'Pm':'Promethium', 'Sm':'Samarium', 'Eu':'Europium', 'Gd':'Gadolinium', 'Tb':'Terbium', 'Dy':'Dysprosium', 'Ho':'Holmium', 'Er':'Erbium', 'Tm':'Thulium', 'Yb':'Ytterbium', 'Lu':'Lutetium', 'Th':'Thorium', 'Pa':'Protactinium', 'U':'Uranium', 'Np':'Neptunium', 'Pu':'Plutonium', 'Am':'Americium', 'Cm':'Curium', 'Bk':'Berkelium', 'Cf':'Californium', 'Es':'Einsteinium', 'Fm':'Fermium', 'Md':'Mendelevium', 'No':'Nobelium', 'Lr':'Lawrencium'}
+        };
+
+        let selectedBlock = '';
+        let selectedMode = '';
+        let currentRound = 1;
+        let score = 0;
+        let currentKeys = [];
+        let currentKey = '';
+        let activeDataset = {};
+
+        function selectBlock(block) {
+            selectedBlock = block;
+            document.getElementById('block-screen').classList.add('hidden');
+            document.getElementById('mode-screen').classList.remove('hidden');
+        }
+
+        function backToBlocks() {
+            document.getElementById('mode-screen').classList.add('hidden');
+            document.getElementById('block-screen').classList.remove('hidden');
+        }
+
+        function selectMode(mode) {
+            selectedMode = mode;
+            document.getElementById('mode-screen').classList.add('hidden');
+            document.getElementById('game-screen').classList.remove('hidden');
+            
+            activeDataset = (selectedMode === 'number') ? elementsData[selectedBlock] : symbolMapping[selectedBlock];
+            currentKeys = Object.keys(activeDataset);
+            
+            document.getElementById('prompt-label').innerText = (selectedMode === 'number') ? 'Atomic Number' : 'Atomic Symbol';
+            startRound();
+        }
+
+        function startRound() {
+            if (currentRound > 5) {
+                endGame();
+                return;
+            }
+            document.getElementById('round-num').innerText = currentRound;
+            document.getElementById('current-score').innerText = score;
+            document.getElementById('feedback-msg').innerText = '';
+            document.getElementById('user-guess').value = '';
+
+            // Pick random key
+            const randomIndex = Math.floor(Math.random() * currentKeys.length);
+            currentKey = currentKeys[randomIndex];
+            // Remove so it doesn't repeat in the same 5 rounds
+            currentKeys.splice(randomIndex, 1);
+
+            document.getElementById('prompt-value').innerText = currentKey;
+        }
+
+        function submitGuess(e) {
+            e.preventDefault();
+            const userGuess = document.getElementById('user-guess').value.trim();
+            const correctAnswer = activeDataset[currentKey];
+            const feedback = document.getElementById('feedback-msg');
+
+            if (userGuess.toLowerCase() === correctAnswer.toLowerCase()) {
+                score += 10;
+                feedback.innerText = "BULLSEYE! Correct round.";
+                feedback.className = "text-center text-sm h-6 font-medium text-emerald-400";
+            } else {
+                feedback.innerText = `Wrong guess! Correct: ${correctAnswer}`;
+                feedback.className = "text-center text-sm h-6 font-medium text-rose-450 text-rose-400";
+            }
+
+            currentRound++;
+            setTimeout(startRound, 1200);
+        }
+
+        function endGame() {
+            document.getElementById('game-screen').classList.add('hidden');
+            document.getElementById('result-screen').classList.remove('hidden');
+            document.getElementById('final-score').innerText = `${score} / 50`;
+            const percentage = (score / 50) * 100;
+            document.getElementById('percentage-msg').innerText = `Guessing Percentage: ${percentage}%`;
+        }
+
+        function resetGame() {
+            currentRound = 1;
+            score = 0;
+            document.getElementById('result-screen').classList.add('hidden');
+            document.getElementById('block-screen').classList.remove('hidden');
+        }
+    </script>
+</body>
+</html>
